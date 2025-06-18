@@ -8,7 +8,24 @@
 </head>
 
 <body>
-    <h1 class="game-title">🚢 Battleship</h1>
+    <h1 style="
+    text-align: center;
+    font-size: 48px;
+    font-weight: bold;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: black;
+    text-shadow:
+      1px 1px 0 #FF4C29,
+      -1px -1px 0 #FF4C29,
+      1px -1px 0 #FF4C29,
+      -1px 1px 0 #FF4C29;
+    margin-top: 30px;
+  ">
+        🚢 Battleship
+    </h1>
+
+
+
 
 
     <div class="controls">
@@ -20,11 +37,29 @@
         <!-- Sidebar with draggable ships -->
         <div class="ship-sidebar">
             <h3>Drag Ships</h3>
-            <div class="ship" draggable="true" data-size="4"></div>
-            <div class="ship" draggable="true" data-size="3"></div>
-            <div class="ship" draggable="true" data-size="3"></div>
-            <div class="ship" draggable="true" data-size="2"></div>
-            <div class="ship" draggable="true" data-size="1"></div>
+            <div class="ship" draggable="true" data-size="4">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="ship" draggable="true" data-size="3">
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="ship" draggable="true" data-size="3">
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="ship" draggable="true" data-size="2">
+                <div></div>
+                <div></div>
+            </div>
+            <div class="ship" draggable="true" data-size="1">
+                <div></div>
+            </div>
         </div>
 
         <!-- Your board -->
@@ -50,6 +85,13 @@
             const script = document.createElement("script");
             script.src = "script.js";
             document.body.appendChild(script);
+        });
+
+        // Ensures the grid loads correctly even from splash screen
+        window.addEventListener("load", () => {
+            setTimeout(() => {
+                if (typeof restartGame === "function") restartGame();
+            }, 100);
         });
     </script>
 </body>

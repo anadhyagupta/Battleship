@@ -1,14 +1,13 @@
 const boardSize = 9;
 const ships = [4, 3, 3, 2, 1];
-let isHorizontal = true;
 
+let isHorizontal = true;
 let playerBoard, computerBoard;
-let playerHits = 0;
-let computerHits = 0;
+let playerHits = 0,
+    computerHits = 0;
 let placedShips = [];
 
 const totalShipCells = ships.reduce((a, b) => a + b, 0);
-
 const playerGrid = document.getElementById("player-board");
 const computerGrid = document.getElementById("computer-board");
 const infoText = document.getElementById("info-text");
@@ -17,10 +16,11 @@ const restartBtn = document.getElementById("restart-btn");
 const shipSidebar = document.querySelector(".ship-sidebar");
 
 let draggedShip = null;
-let lastHit = null;
+let triedCells = new Set();
 let huntQueue = [];
-let currentDirection = null;
-let triedDirections = new Set();
+let hitStack = [];
+let direction = null;
+let reversed = false;
 
 rotateBtn.addEventListener("click", () => {
     isHorizontal = !isHorizontal;
@@ -28,21 +28,27 @@ rotateBtn.addEventListener("click", () => {
     shipSidebar.classList.toggle("vertical", !isHorizontal);
 });
 
-restartBtn.addEventListener("click", () => {
-    restartGame();
-});
+restartBtn.addEventListener("click", restartGame);
 
 function restartGame() {
     playerGrid.innerHTML = "";
     computerGrid.innerHTML = "";
-    shipSidebar.innerHTML = `
-    <h3>Drag Ships</h3>
-    <div class="ship" draggable="true" data-size="4"></div>
-    <div class="ship" draggable="true" data-size="3"></div>
-    <div class="ship" draggable="true" data-size="3"></div>
-    <div class="ship" draggable="true" data-size="2"></div>
-    <div class="ship" draggable="true" data-size="1"></div>
-  `;
+    shipSidebar.innerHTML = `<h3>Drag Ships</h3>`;
+
+    ships.forEach(size => {
+        const ship = document.createElement("div");
+        ship.classList.add("ship");
+        ship.setAttribute("draggable", true);
+        ship.setAttribute("data-size", size);
+
+        for (let i = 0; i < size; i++) {
+            const block = document.createElement("div");
+            block.classList.add("ship-block");
+            ship.appendChild(block);
+        }
+
+        shipSidebar.appendChild(ship);
+    });
 
     playerBoard = Array.from({ length: boardSize }, () => Array(boardSize).fill(0));
     computerBoard = Array.from({ length: boardSize }, () => Array(boardSize).fill(0));
@@ -50,15 +56,15 @@ function restartGame() {
     computerHits = 0;
     placedShips = [];
     draggedShip = null;
-    lastHit = null;
+    triedCells = new Set();
     huntQueue = [];
-    currentDirection = null;
-    triedDirections = new Set();
+    hitStack = [];
+    direction = null;
+    reversed = false;
 
     createBoard(playerGrid, null);
     createBoard(computerGrid, null);
     setupDragEvents();
-
     infoText.textContent = "Drag and drop your ships to place them.";
 }
 
@@ -90,9 +96,8 @@ function setupDragEvents() {
         });
     });
 
-    document.querySelectorAll("#player-board .cell").forEach(cell => {
+    playerGrid.querySelectorAll(".cell").forEach(cell => {
         cell.addEventListener("dragover", e => e.preventDefault());
-
         cell.addEventListener("drop", () => {
             if (!draggedShip) return;
             const size = parseInt(draggedShip.dataset.size);
@@ -104,12 +109,12 @@ function setupDragEvents() {
                 placedShips.push(size);
                 draggedShip.remove();
 
-                if (placedShips.length === 5) {
+                if (placedShips.length === ships.length) {
                     infoText.textContent = "Start attacking the computer!";
                     placeShipsRandom(computerBoard);
                     setupGame();
                 } else {
-                    infoText.textContent = `Place ${5 - placedShips.length} more ship(s).`;
+                    infoText.textContent = `Place ${ships.length - placedShips.length} more ship(s).`;
                 }
             }
         });
@@ -132,7 +137,7 @@ function placeShip(board, r, c, size, horizontal, grid) {
         const cc = c + (horizontal ? i : 0);
         board[rr][cc] = 1;
         const cell = grid.querySelector(`[data-row="${rr}"][data-col="${cc}"]`);
-        cell.classList.add("ship-cell");
+        if (cell) cell.classList.add("ship-cell");
     }
 }
 
@@ -141,23 +146,10 @@ function placeShipsRandom(board) {
         let placed = false;
         while (!placed) {
             const isH = Math.random() < 0.5;
-            const row = Math.floor(Math.random() * (isH ? boardSize : boardSize - size + 1));
-            const col = Math.floor(Math.random() * (isH ? boardSize - size + 1 : boardSize));
-            let clear = true;
-            for (let i = 0; i < size; i++) {
-                const r = row + (isH ? 0 : i);
-                const c = col + (isH ? i : 0);
-                if (board[r][c] === 1) {
-                    clear = false;
-                    break;
-                }
-            }
-            if (clear) {
-                for (let i = 0; i < size; i++) {
-                    const r = row + (isH ? 0 : i);
-                    const c = col + (isH ? i : 0);
-                    board[r][c] = 1;
-                }
+            const r = Math.floor(Math.random() * (isH ? boardSize : boardSize - size + 1));
+            const c = Math.floor(Math.random() * (isH ? boardSize - size + 1 : boardSize));
+            if (canPlaceShip(board, r, c, size, isH)) {
+                placeShip(board, r, c, size, isH, { querySelector: () => null });
                 placed = true;
             }
         }
@@ -192,112 +184,110 @@ function playerAttack(r, c, cell) {
         return;
     }
 
-    setTimeout(computerTurn, 800);
+    setTimeout(computerTurn, 700);
 }
 
 function computerTurn() {
-    let r, c, cell;
+    const directions = [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1]
+    ];
 
-    function isValidCell(rr, cc) {
-        return rr >= 0 && rr < boardSize && cc >= 0 && cc < boardSize &&
-            !playerGrid.querySelector(`[data-row="${rr}"][data-col="${cc}"]`).classList.contains("hit") &&
-            !playerGrid.querySelector(`[data-row="${rr}"][data-col="${cc}"]`).classList.contains("miss") &&
-            !playerGrid.querySelector(`[data-row="${rr}"][data-col="${cc}"]`).classList.contains("computer-hit") &&
-            !playerGrid.querySelector(`[data-row="${rr}"][data-col="${cc}"]`).classList.contains("computer-miss");
+    function isValid(r, c) {
+        return r >= 0 && r < boardSize && c >= 0 && c < boardSize && !triedCells.has(`${r},${c}`);
     }
 
-    // 1. Continue in current direction
-    if (lastHit && currentDirection) {
-        const [lr, lc] = lastHit;
-        const [dr, dc] = currentDirection;
-        r = lr + dr;
-        c = lc + dc;
+    function attack(r, c) {
+        triedCells.add(`${r},${c}`);
+        const cell = playerGrid.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+        if (!cell) return false;
 
-        if (!isValidCell(r, c)) {
-            currentDirection = null;
-            computerTurn();
-            return;
-        }
-    }
+        if (playerBoard[r][c] === 1) {
+            cell.classList.add("computer-hit");
+            computerHits++;
+            infoText.textContent = "Computer hit!";
+            hitStack.push([r, c]);
 
-    // 2. Use huntQueue (neighbours of last hit)
-    else if (huntQueue.length > 0) {
-        [r, c] = huntQueue.shift();
-    }
-
-    // 3. If last hit exists but no direction yet — generate 4 neighbours
-    else if (lastHit) {
-        const [lr, lc] = lastHit;
-        const directions = [
-            [-1, 0],
-            [1, 0],
-            [0, -1],
-            [0, 1]
-        ];
-
-        for (const [dr, dc] of directions) {
-            const rr = lr + dr;
-            const cc = lc + dc;
-            if (isValidCell(rr, cc)) huntQueue.push([rr, cc]);
-        }
-
-        if (huntQueue.length > 0) {
-            [r, c] = huntQueue.shift();
+            if (hitStack.length === 1) {
+                for (let [dr, dc] of directions) {
+                    const nr = r + dr;
+                    const nc = c + dc;
+                    if (isValid(nr, nc)) huntQueue.push([nr, nc]);
+                }
+            } else if (hitStack.length === 2 && !direction) {
+                const [r1, c1] = hitStack[0];
+                const [r2, c2] = hitStack[1];
+                direction = [r2 - r1, c2 - c1];
+            }
+            return true;
         } else {
-            lastHit = null;
-            computerTurn();
+            cell.classList.add("computer-miss");
+            infoText.textContent = "Computer miss!";
+            return false;
+        }
+    }
+
+    // Continue in the same direction
+    if (direction && hitStack.length >= 2) {
+        const [lastR, lastC] = hitStack[hitStack.length - 1];
+        const [dr, dc] = direction;
+        const nextR = lastR + dr;
+        const nextC = lastC + dc;
+
+        if (isValid(nextR, nextC)) {
+            const wasHit = attack(nextR, nextC);
+            if (!wasHit) {
+                // Try opposite direction from first hit
+                const [firstR, firstC] = hitStack[0];
+                const revR = firstR - dr;
+                const revC = firstC - dc;
+                if (isValid(revR, revC)) {
+                    attack(revR, revC);
+                } else {
+                    direction = null;
+                    hitStack = [];
+                }
+            }
+            return;
+        } else {
+            // Try opposite direction from first hit
+            const [firstR, firstC] = hitStack[0];
+            const revR = firstR - dr;
+            const revC = firstC - dc;
+            if (isValid(revR, revC)) {
+                attack(revR, revC);
+            } else {
+                direction = null;
+                hitStack = [];
+            }
             return;
         }
     }
 
-    // 4. If nothing else — pick random
-    else {
+    // Process huntQueue after first hit
+    while (huntQueue.length > 0) {
+        const [r, c] = huntQueue.shift();
+        if (isValid(r, c)) {
+            const wasHit = attack(r, c);
+            if (wasHit && hitStack.length === 2 && !direction) {
+                const [r1, c1] = hitStack[0];
+                const [r2, c2] = hitStack[1];
+                direction = [r2 - r1, c2 - c1];
+            }
+            return;
+        }
+    }
+
+    // Fallback to random
+    let r, c;
+    do {
         r = Math.floor(Math.random() * boardSize);
         c = Math.floor(Math.random() * boardSize);
-        cell = playerGrid.querySelector(`[data-row="${r}"][data-col="${c}"]`);
-        if (cell.classList.contains("hit") || cell.classList.contains("miss") || cell.classList.contains("computer-hit") || cell.classList.contains("computer-miss")) {
-            computerTurn();
-            return;
-        }
-    }
+    } while (triedCells.has(`${r},${c}`));
 
-    // Final cell reference
-    cell = playerGrid.querySelector(`[data-row="${r}"][data-col="${c}"]`);
-
-    if (playerBoard[r][c] === 1) {
-        cell.classList.add("computer-hit");
-        computerHits++;
-        infoText.textContent = "Computer hit!";
-
-        if (!lastHit) {
-            lastHit = [r, c]; // first hit
-        } else if (!currentDirection) {
-            // Set direction from lastHit to current hit
-            currentDirection = [r - lastHit[0], c - lastHit[1]];
-        }
-
-        // Keep going in same direction
-        if (currentDirection) {
-            const nextR = r + currentDirection[0];
-            const nextC = c + currentDirection[1];
-            if (isValidCell(nextR, nextC)) {
-                huntQueue.unshift([nextR, nextC]); // push to front
-            }
-        }
-
-    } else {
-        cell.classList.add("computer-miss");
-        infoText.textContent = "Computer miss!";
-
-        // If in direction mode and missed, reset direction
-        if (currentDirection) {
-            currentDirection = null;
-        }
-
-        if (huntQueue.length === 0) {
-            lastHit = null;
-        }
-    }
+    attack(r, c);
 
     if (computerHits === totalShipCells) {
         infoText.textContent = "💥 Computer wins!";
@@ -305,12 +295,14 @@ function computerTurn() {
     }
 }
 
-
 function disableBoard(grid) {
     grid.querySelectorAll(".cell").forEach(cell => {
         cell.style.pointerEvents = "none";
     });
 }
 
-// Start the game when the page loads
-restartGame();
+window.addEventListener("load", () => {
+    setTimeout(() => {
+        restartGame();
+    }, 100);
+});

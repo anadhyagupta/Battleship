@@ -1,6 +1,6 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(to bottom right, #1a1a2e, #16213e, #0f3460);
+    background: #FFF2B2;
     /* 🚢 Deep navy-blue */
     margin: 0;
     padding: 0;
@@ -61,7 +61,7 @@ button {
     align-items: center;
     gap: 10px;
     padding: 20px;
-    background: #ffffffcc;
+    background: #F47A1F;
     border-radius: 10px;
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
 }
@@ -71,7 +71,7 @@ button {
 }
 
 .ship {
-    background-color: #4b89dc;
+    background-color: #0f3460;
     border-radius: 4px;
     cursor: grab;
 }
@@ -124,7 +124,7 @@ button {
 /* Board + Cell Styling */
 
 .board-container {
-    background: #ffffffcc;
+    background-color: #F47A1F;
     border-radius: 15px;
     padding: 20px;
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
@@ -150,6 +150,8 @@ button {
     border-radius: 5px;
     border: 1px solid #ccc;
     cursor: pointer;
+    position: relative;
+    z-index: 1;
     transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
@@ -169,8 +171,25 @@ button {
     background-color: #4b89dc;
 }
 
+
+/* When ship is placed (dropped), make it blue */
+
+.ship-cell.placed {
+    background-color: #4ea8ff;
+}
+
+
+/* Hover effect ONLY for placed ship cells */
+
+.ship-cell.placed:hover {
+    background-color: rgba(78, 168, 255, 0.7);
+    /* Slightly lighter */
+    transform: scale(1.05);
+    box-shadow: 0 0 5px rgba(78, 168, 255, 0.5);
+}
+
 .hit {
-    background-color: #e74c3c;
+    background-color: #e67e22;
     color: white;
 }
 
@@ -262,4 +281,72 @@ button {
     /* ✅ Mustard Yellow */
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
     letter-spacing: 2px;
+}
+
+.game-title-img {
+    width: 300px;
+    /* Adjust size as needed */
+    margin-top: 20px;
+    margin-bottom: -10px;
+    filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.5));
+}
+
+.ship {
+    display: flex;
+    gap: 2px;
+}
+
+.ship-sidebar.vertical .ship {
+    flex-direction: column;
+}
+
+.ship-block {
+    width: 30px;
+    height: 30px;
+    background-color: #0f3460;
+    border: 1px solid #fff;
+    border-radius: 4px;
+}
+
+
+/* 🚢 Clean ship grid boxes styling */
+
+.ship {
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+    padding: 3px;
+    background-color: transparent;
+}
+
+.ship-sidebar.vertical .ship {
+    flex-direction: column;
+}
+
+.ship-block {
+    width: 30px;
+    height: 30px;
+    background-color: #0f3460;
+    border: 2px solid #ffffffaa;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+
+/* 🎯 SHIP BOXES AS GRIDS */
+
+.ship {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
+    background-color: #0f3460;
+    border-radius: 4px;
+    cursor: grab;
+    gap: 2px;
+    padding: 2px;
+}
+
+.ship>div {
+    background-color: #4ea8ff;
+    border: 1px solid #ffffff88;
+    border-radius: 2px;
 }
