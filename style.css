@@ -1,6 +1,6 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #FFF2B2;
+    background: #FEfBE3;
     /* 🚢 Deep navy-blue */
     margin: 0;
     padding: 0;
@@ -29,13 +29,13 @@ button {
 
 #rotate-btn,
 #restart-btn {
-    background-color: #c0392b;
+    background-color: #104da3;
     /* 🍒 Cherry Red */
 }
 
 #rotate-btn:hover,
 #restart-btn:hover {
-    background-color: #a93226;
+    background-color: rgba(26, 132, 252, 0.992);
     /* 🔥 Darker on hover */
 }
 

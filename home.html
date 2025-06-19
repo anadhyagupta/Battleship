@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Battleship</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <h1 style="
+    text-align: center;
+    font-size: 48px;
+    font-weight: bold;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: black;
+    text-shadow:
+      /* 1px 1px 0 #FF4C29,
+      -1px -1px 0 #FF4C29, */
+      /* 1px -1px 0 #FF4C29, */
+      -1px 1px 0 #FF4C29;
+    margin-top: 30px;
+  ">
+        🚢 Battleship
+    </h1>
+
+
+
+
+
+    <div class="controls">
+        <button id="rotate-btn">🔄 Rotate (Horizontal)</button>
+        <button id="restart-btn">🔁 Restart Game</button>
+    </div>
+
+    <div class="boards">
+        <!-- Sidebar with draggable ships -->
+        <div class="ship-sidebar">
+            <h3>Drag Ships</h3>
+            <div class="ship" draggable="true" data-size="4">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="ship" draggable="true" data-size="3">
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="ship" draggable="true" data-size="3">
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="ship" draggable="true" data-size="2">
+                <div></div>
+                <div></div>
+            </div>
+            <div class="ship" draggable="true" data-size="1">
+                <div></div>
+            </div>
+        </div>
+
+        <!-- Your board -->
+        <div class="board-container">
+            <h2>Your Board</h2>
+            <div id="player-board" class="board"></div>
+        </div>
+
+        <!-- Computer's board -->
+        <div class="board-container">
+            <h2>Attack Computer</h2>
+            <div id="computer-board" class="board"></div>
+        </div>
+    </div>
+
+    <div class="info" id="info-text">
+        Drag and drop your ships to place them.
+    </div>
+
+    <script>
+        // This will dynamically load the JavaScript after the HTML content is parsed
+        window.addEventListener("DOMContentLoaded", () => {
+            const script = document.createElement("script");
+            script.src = "script.js";
+            document.body.appendChild(script);
+        });
+
+        // Ensures the grid loads correctly even from splash screen
+        window.addEventListener("load", () => {
+            setTimeout(() => {
+                if (typeof restartGame === "function") restartGame();
+            }, 100);
+        });
+    </script>
+</body>
+
+</html>
