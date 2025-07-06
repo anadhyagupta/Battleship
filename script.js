@@ -24,7 +24,7 @@ let reversed = false;
 
 rotateBtn.addEventListener("click", () => {
     isHorizontal = !isHorizontal;
-    rotateBtn.textContent = isHorizontal ? "🔄 Rotate (Horizontal)" : "🔄 Rotate (Vertical)";
+    rotateBtn.textContent = isHorizontal ? "🔄 Rotate" : "🔄 Rotate";
     shipSidebar.classList.toggle("vertical", !isHorizontal);
 });
 
